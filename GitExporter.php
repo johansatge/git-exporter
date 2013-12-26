@@ -133,6 +133,7 @@ class GitExporter
         }
 
         // If the export directory exists, asks for deletion
+        // @todo move this in a function
         $files = glob($this->exportPath . DIRECTORY_SEPARATOR . '*');
         if (is_dir($this->exportPath) || count($files) > 0)
         {
@@ -146,7 +147,7 @@ class GitExporter
                 return false;
             }
             $this->executeCommand('rm -rf ' . $this->exportPath);
-            if (is_dir($this->exportPath))
+            if (is_readable($this->exportPath))
             {
                 $this->output('Aborted. The "' . self::EXPORT_DIR . '" directory could not be deleted.');
                 return false;
@@ -177,7 +178,7 @@ class GitExporter
                 }
             }
             $this->executeCommand('git show ' . $until . ':' . $file . ' > ' . $this->exportPath . DIRECTORY_SEPARATOR . $file);
-            $this->output('Exporting file ' . ($index + 1) . ' of ' . count($modified_files) . ': ' . $file, false);
+            $this->output('Exporting file ' . ($index + 1) . ' of ' . count($modified_files) . ': ' . $file);
         }
 
         // Generates the changelog
@@ -203,6 +204,7 @@ class GitExporter
 
     /**
      * Parses command line parameters
+     * @todo use "--export" as default action
      * @param array $raw_params
      * @return array
      */
