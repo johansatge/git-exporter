@@ -1,2 +1,2 @@
-git-exporter
+Git Exporter
 ============
