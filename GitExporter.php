@@ -60,7 +60,7 @@ class GitExporter
      */
     private function outputHelp()
     {
-        echo '@todo';
+        echo '@todo write this';
     }
 
     /**
@@ -73,25 +73,20 @@ class GitExporter
 
     /**
      * Builds the export folder
+     * @todo do not count($modified_files) multiple times
      * @param array $options
      * @return boolean
      */
     private function makeDiff($options)
     {
+        // Checks parameters and repository status
         $since = !empty($options[0]) ? $options[0] : '';
         $until = !empty($options[1]) ? $options[1] : '';
-        if (empty($since))
+        if (empty($since) || empty($until))
         {
-            $this->output('Missing <since> parameter. See "--help".');
+            $this->output('Missing ' . (empty($since) ? '<since>' : '<until>') . ' parameter. See "--help".');
             return false;
         }
-        if (empty($until))
-        {
-            $this->output('Missing <until> parameter. See "--help".');
-            return false;
-        }
-
-        // Repository status
         if (!$this->repositoryExists())
         {
             $this->output('No git repository found. See "--help".');
@@ -99,6 +94,7 @@ class GitExporter
         }
 
         // Gets the commits list
+        // @todo test this when using a tag name or the "HEAD" reference
         $commits = $this->executeCommand('git log ' . $since . '..' . $until . ' -m --pretty=format:%H', true);
         if ($commits['error'] !== false)
         {
@@ -106,7 +102,7 @@ class GitExporter
             return false;
         }
 
-        // Gets the modified and deleted files lists
+        // Gets the modified and deleted files lists for each commit found
         $this->output('Generating diff from "' . substr($since, 0, 6) . '" to "' . substr($until, 0, 6) . '"...');
         $modified_files = array();
         $deleted_files  = array();
@@ -118,49 +114,27 @@ class GitExporter
                 $file_data = explode("\t", $file);
                 $type      = !empty($file_data[0]) && preg_match('/^[AMD]{1}$/', $file_data[0]) ? $file_data[0] : false;
                 $path      = !empty($file_data[1]) ? $file_data[1] : false;
-                if (!empty($type) && !empty($path))
+                if (!empty($type) && !empty($path) && $type == 'D' && (!in_array($path, $deleted_files) && !in_array($path, $modified_files)))
                 {
-                    if ($type == 'D' && (!in_array($path, $deleted_files) && !in_array($path, $modified_files)))
-                    {
-                        $deleted_files[] = $path;
-                    }
-                    if (($type == 'M' || $type == 'A') && (!in_array($path, $deleted_files) && !in_array($path, $modified_files)))
-                    {
-                        $modified_files[] = $path;
-                    }
+                    $deleted_files[] = $path;
                 }
-            }
-        }
-
-        // If the export directory exists, asks for deletion
-        // @todo move this in a function
-        $files = glob($this->exportPath . DIRECTORY_SEPARATOR . '*');
-        if (is_dir($this->exportPath) || count($files) > 0)
-        {
-            $this->output();
-            $this->output('The "' . self::EXPORT_DIR . '" directory exists. Do you want to remove it ? (y/n)', false);
-            $handle                     = fopen('php://stdin', 'r');
-            $confirm_directory_deletion = strtolower(trim(fgets($handle)));
-            if (!in_array($confirm_directory_deletion, array('y', 'yes')))
-            {
-                $this->output('Aborted. Please delete the "' . self::EXPORT_DIR . '" directory before processing again.');
-                return false;
-            }
-            $this->executeCommand('rm -rf ' . $this->exportPath);
-            if (is_readable($this->exportPath))
-            {
-                $this->output('Aborted. The "' . self::EXPORT_DIR . '" directory could not be deleted.');
-                return false;
-            }
-            else
-            {
-                $this->output('Directory deleted: "' . $this->exportPath . '"');
+                if (!empty($type) && !empty($path) && ($type == 'M' || $type == 'A') && (!in_array($path, $deleted_files) && !in_array($path, $modified_files)))
+                {
+                    $modified_files[] = $path;
+                }
             }
         }
         $this->output();
 
+        // If the export directory exists, asks for deletion
+        if (!$this->checkExportDirectory())
+        {
+            return false;
+        }
+
         // Generates the files
         mkdir($this->exportPath);
+        $line_length = 0;
         foreach ($modified_files as $index => $file)
         {
             $fileinfo = pathinfo($file);
@@ -178,27 +152,60 @@ class GitExporter
                 }
             }
             $this->executeCommand('git show ' . $until . ':' . $file . ' > ' . $this->exportPath . DIRECTORY_SEPARATOR . $file);
-            $this->output('Exporting file ' . ($index + 1) . ' of ' . count($modified_files) . ': ' . $file);
+            $line = 'Exporting file ' . ($index + 1) . ' of ' . count($modified_files) . ' (' . intval(($index + 1) * (100 / count($modified_files))) . '%): ' . $file;
+            $this->output($line . ($line_length - strlen($line) > 0 ? str_repeat(' ', $line_length - strlen($line)) : ''), false);
+            $line_length = strlen($line);
         }
+        $this->output(str_repeat(' ', $line_length), false);
 
         // Generates the changelog
-        $changelog   = array();
-        $changelog[] = 'Diff from "' . $since . '" to "' . $until . '"';
-        $changelog[] = $this->separator;
-        $changelog[] = count($commits) . ' commits';
-        $changelog[] = count($modified_files) . ' modified file(s)';
-        $changelog[] = count($deleted_files) . ' deleted file(s)';
-        $changelog[] = $this->separator;
-        $changelog[] = 'Modified files:';
-        $changelog   = array_merge($changelog, $modified_files);
-        $changelog[] = $this->separator;
-        $changelog[] = 'Deleted files:';
-        $changelog   = array_merge($changelog, $deleted_files);
+        $changelog = array(
+            'Diff from "' . $since . '" to "' . $until . '"',
+            $this->separator,
+            count($commits) . ' commits',
+            count($modified_files) . ' modified file(s)',
+            count($deleted_files) . ' deleted file(s)',
+            $this->separator,
+            'Modified files:',
+            implode("\r\n", $modified_files),
+            $this->separator,
+            'Deleted files:',
+            implode("\r\n", $deleted_files)
+        );
         file_put_contents($this->exportPath . DIRECTORY_SEPARATOR . '_changelog.txt', implode("\r\n", $changelog));
 
-        $this->output();
-        $this->output('Export done. ', false);
-        $this->output(count($commits) . ' commits found: ' . count($modified_files) . ' modified file(s), ' . count($deleted_files) . ' deleted file(s).');
+        $this->output('Export done. ' . count($commits) . ' commits found, ' . count($modified_files) . ' modified file(s) and ' . count($deleted_files) . ' deleted file(s).');
+        return true;
+    }
+
+    /**
+     * Asks permission to delete the export directory, if needed
+     * @return boolean
+     */
+    private function checkExportDirectory()
+    {
+        if (is_readable($this->exportPath))
+        {
+            $this->output('The "' . self::EXPORT_DIR . '" directory exists. Do you want to remove it ? (y/n)');
+            $user_input                 = fopen('php://stdin', 'r');
+            $confirm_directory_deletion = strtolower(trim(fgets($user_input)));
+            if (!in_array($confirm_directory_deletion, array('y', 'yes')))
+            {
+                $this->output('Aborted. Please delete the "' . self::EXPORT_DIR . '" directory before processing again.');
+                return false;
+            }
+            $this->executeCommand('rm -rf ' . $this->exportPath);
+            if (is_readable($this->exportPath))
+            {
+                $this->output('Aborted. The "' . self::EXPORT_DIR . '" directory could not be deleted.');
+                return false;
+            }
+            else
+            {
+                $this->output('Directory deleted: "' . $this->exportPath . '"');
+                $this->output();
+            }
+        }
         return true;
     }
 
@@ -253,10 +260,12 @@ class GitExporter
     /**
      * Outputs a message
      * @param string $message
+     * @param boolean $new_line
      */
-    private function output($message = '')
+    private function output($message = '', $new_line = true)
     {
-        echo (!empty($message) ? $message : $this->separator) . "\r\n";
+        echo !empty($message) ? $message : $this->separator;
+        echo $new_line ? "\r\n" : "\r";
     }
 
 }

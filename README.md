@@ -3,4 +3,4 @@ Git Exporter
 
 # @todo
 
-* test usage with tags and "HEAD" mention
+write description
