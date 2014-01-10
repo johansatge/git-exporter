@@ -44,7 +44,7 @@ class GitExporter
         {
             $this->outputVersion();
         }
-        else if ($this->params['action'] == 'export')
+        else if ($this->params['action'] == 'diff')
         {
             $this->makeDiff($this->params['options']);
         }
@@ -73,7 +73,7 @@ class GitExporter
 
     /**
      * Builds the export folder
-     * @todo do not count($modified_files) multiple times
+     * @todo do not count() $modified_files and $commits['result'] multiple times
      * @param array $options
      * @return boolean
      */
@@ -82,14 +82,14 @@ class GitExporter
         // Checks parameters and repository status
         $since = !empty($options[0]) ? $options[0] : '';
         $until = !empty($options[1]) ? $options[1] : '';
+        if (!$this->isRepository())
+        {
+            $this->output('No git repository found. See "--help".');
+            return false;
+        }
         if (empty($since) || empty($until))
         {
             $this->output('Missing ' . (empty($since) ? '<since>' : '<until>') . ' parameter. See "--help".');
-            return false;
-        }
-        if (!$this->repositoryExists())
-        {
-            $this->output('No git repository found. See "--help".');
             return false;
         }
 
@@ -162,7 +162,7 @@ class GitExporter
         $changelog = array(
             'Diff from "' . $since . '" to "' . $until . '"',
             $this->separator,
-            count($commits) . ' commits',
+            count($commits['result']) . ' commits',
             count($modified_files) . ' modified file(s)',
             count($deleted_files) . ' deleted file(s)',
             $this->separator,
@@ -174,7 +174,7 @@ class GitExporter
         );
         file_put_contents($this->exportPath . DIRECTORY_SEPARATOR . '_changelog.txt', implode("\r\n", $changelog));
 
-        $this->output('Export done. ' . count($commits) . ' commits found, ' . count($modified_files) . ' modified file(s) and ' . count($deleted_files) . ' deleted file(s).');
+        $this->output('Export done. ' . count($commits['result']) . ' commits found, ' . count($modified_files) . ' modified file(s) and ' . count($deleted_files) . ' deleted file(s).');
         return true;
     }
 
@@ -211,7 +211,6 @@ class GitExporter
 
     /**
      * Parses command line parameters
-     * @todo use "--export" as default action
      * @param array $raw_params
      * @return array
      */
@@ -219,16 +218,12 @@ class GitExporter
     {
         array_shift($raw_params);
         $params = array('action' => '', 'options' => array());
-        if (count($raw_params) == 0)
-        {
-            return $params;
-        }
-        if (strpos($raw_params[0], '--') === 0)
+        if (count($raw_params) > 0)
         {
             $params['action'] = str_replace('--', '', $raw_params[0]);
             array_shift($raw_params);
+            $params['options'] = $raw_params;
         }
-        $params['options'] = $raw_params;
         return $params;
     }
 
@@ -236,14 +231,14 @@ class GitExporter
      * Checks if the current directory is a git repository
      * @return boolean
      */
-    private function repositoryExists()
+    private function isRepository()
     {
         $status = $this->executeCommand('git status');
         return $status['error'] === false;
     }
 
     /**
-     * Executes a shell command and returns it (or the error message, if an error occurs)
+     * Executes a shell command and returns the result (or the error message if needed)
      * @param string $command
      * @return array
      */
