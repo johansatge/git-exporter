@@ -13,9 +13,9 @@ class GitExporter
 
     const NAME       = 'GitExporter';
     const VERSION    = '1.0';
-    const EXPORT_DIR = '_export';
+    const EXPORT_DIR = '.export';
 
-    private $params;
+    private $userInput;
     private $exportPath;
     private $separator;
 
@@ -25,28 +25,28 @@ class GitExporter
      */
     function __construct($argv)
     {
-        $this->params     = $this->parseCommandLineParameters($argv);
+        $this->userInput  = $this->parseCommandLineParameters($argv);
         $this->exportPath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::EXPORT_DIR;
         $this->separator  = str_repeat('-', 40);
     }
 
     /**
-     * Generates the diff
+     * Executes the script
      */
     public function exec()
     {
         $this->output();
-        if ($this->params['action'] == 'help')
+        if (in_array('help', $this->userInput['options']))
         {
             $this->outputHelp();
         }
-        else if ($this->params['action'] == 'version')
+        else if ($this->userInput['command'] == 'version')
         {
             $this->outputVersion();
         }
-        else if ($this->params['action'] == 'diff')
+        else if ($this->userInput['command'] == 'diff')
         {
-            $this->makeDiff($this->params['options']);
+            $this->makeDiff();
         }
         else
         {
@@ -74,14 +74,13 @@ class GitExporter
     /**
      * Builds the export folder
      * @todo do not count() $modified_files and $commits['result'] multiple times
-     * @param array $options
      * @return boolean
      */
-    private function makeDiff($options)
+    private function makeDiff()
     {
         // Checks parameters and repository status
-        $since = !empty($options[0]) ? $options[0] : '';
-        $until = !empty($options[1]) ? $options[1] : '';
+        $since = !empty($this->userInput['params'][0]) ? $this->userInput['params'][0] : '';
+        $until = !empty($this->userInput['params'][1]) ? $this->userInput['params'][1] : '';
         if (!$this->isRepository())
         {
             $this->output('No git repository found. See "--help".');
@@ -98,7 +97,8 @@ class GitExporter
         $commits = $this->executeCommand('git log ' . $since . '..' . $until . ' -m --pretty=format:%H', true);
         if ($commits['error'] !== false)
         {
-            $this->output('An error occurred when getting the diff. (Error: ' . $commits['error'] . ')');
+            $this->output('An error occurred when getting the diff.');
+            $this->output('(Error: ' . $commits['error'] . ')');
             return false;
         }
 
@@ -211,20 +211,29 @@ class GitExporter
 
     /**
      * Parses command line parameters
-     * @param array $raw_params
+     * @param array $raw_user_input
      * @return array
      */
-    private function parseCommandLineParameters($raw_params)
+    private function parseCommandLineParameters($raw_user_input)
     {
-        array_shift($raw_params);
-        $params = array('action' => '', 'options' => array());
-        if (count($raw_params) > 0)
+        array_shift($raw_user_input);
+        $user_input = array('command' => '', 'params' => array(), 'options' => array());
+        foreach ($raw_user_input as $value)
         {
-            $params['action'] = str_replace('--', '', $raw_params[0]);
-            array_shift($raw_params);
-            $params['options'] = $raw_params;
+            if (strpos($value, '--') === 0)
+            {
+                $user_input['options'][] = str_replace('--', '', $value);
+            }
+            else if (empty($user_input['command']))
+            {
+                $user_input['command'] = $value;
+            }
+            else
+            {
+                $user_input['params'][] = $value;
+            }
         }
-        return $params;
+        return $user_input;
     }
 
     /**
