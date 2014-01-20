@@ -36,7 +36,7 @@ class GitExporter
     public function exec()
     {
         $this->output();
-        if (in_array('help', $this->userInput['options']))
+        if (in_array('help', array_keys($this->userInput['options'])))
         {
             $this->outputHelp();
         }
@@ -222,7 +222,9 @@ class GitExporter
         {
             if (strpos($value, '--') === 0)
             {
-                $user_input['options'][] = str_replace('--', '', $value);
+                $value                          = explode('=', str_replace('--', '', $value));
+                $option                         = array_shift($value);
+                $user_input['options'][$option] = implode('=', $value);
             }
             else if (empty($user_input['command']))
             {
