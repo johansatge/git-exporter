@@ -1,21 +1,19 @@
 <?php
 
-if (php_sapi_name() != 'cli')
+if (php_sapi_name() == 'cli')
 {
-    $this->leave('This script needs PHP to be run in CLI.');
+    $exporter = new GitExporter($argv);
+    $exporter->exec();
 }
-
-$exporter = new GitExporter($argv);
-$exporter->exec();
 
 class GitExporter
 {
 
-    const NAME       = 'GitExporter';
-    const VERSION    = '1.0';
-    const EXPORT_DIR = '.export';
+    const NAME    = 'GitExporter';
+    const VERSION = '0.1';
 
     private $userInput;
+    private $exportDir;
     private $exportPath;
     private $separator;
 
@@ -26,7 +24,8 @@ class GitExporter
     function __construct($argv)
     {
         $this->userInput  = $this->parseCommandLineParameters($argv);
-        $this->exportPath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::EXPORT_DIR;
+        $this->exportDir  = !empty($this->userInput['options']['dir']) ? $this->userInput['options']['dir'] : '.export';
+        $this->exportPath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->exportDir;
         $this->separator  = str_repeat('-', 40);
     }
 
@@ -35,14 +34,13 @@ class GitExporter
      */
     public function exec()
     {
-        $this->output();
         if (in_array('help', array_keys($this->userInput['options'])))
         {
             $this->outputHelp();
         }
-        else if ($this->userInput['command'] == 'version')
+        else if (in_array('version', array_keys($this->userInput['options'])))
         {
-            $this->outputVersion();
+            $this->output(self::NAME . ' version ' . self::VERSION);
         }
         else if ($this->userInput['command'] == 'diff')
         {
@@ -52,7 +50,6 @@ class GitExporter
         {
             $this->output('Nothing to do. See "--help".');
         }
-        $this->output();
     }
 
     /**
@@ -60,15 +57,11 @@ class GitExporter
      */
     private function outputHelp()
     {
-        echo '@todo write this';
-    }
-
-    /**
-     * Outputs version
-     */
-    private function outputVersion()
-    {
-        $this->output(self::NAME . ' version ' . self::VERSION);
+        $this->output('usage:' . "\t" . 'gitexporter [--version] [--dir=<name>] <command> [<args>]');
+        $this->output(' ');
+        $this->output('The available commands are:');
+        $this->output(' diff' . "\t" . 'Exports a diff between two commits');
+        $this->output("\t" . 'and creates a changelog file including modified and deleted files');
     }
 
     /**
@@ -94,7 +87,7 @@ class GitExporter
 
         // Gets the commits list
         // @todo test this when using a tag name or the "HEAD" reference
-        $commits = $this->executeCommand('git log ' . $since . '..' . $until . ' -m --pretty=format:%H', true);
+        $commits = $this->executeCommand('git log ' . $since . '..' . $until . ' -m --pretty=format:%H');
         if ($commits['error'] !== false)
         {
             $this->output('An error occurred when getting the diff.');
@@ -108,7 +101,7 @@ class GitExporter
         $deleted_files  = array();
         foreach ($commits['result'] as $commit)
         {
-            $files = $this->executeCommand('git show ' . $commit . ' --name-status --pretty=format:', true);
+            $files = $this->executeCommand('git show ' . $commit . ' --name-status --pretty=format:');
             foreach ($files['result'] as $file)
             {
                 $file_data = explode("\t", $file);
@@ -186,18 +179,18 @@ class GitExporter
     {
         if (is_readable($this->exportPath))
         {
-            $this->output('The "' . self::EXPORT_DIR . '" directory exists. Do you want to remove it ? (y/n)');
+            $this->output('The "' . $this->exportDir . '" directory exists. Do you want to remove it ? (y/n)');
             $user_input                 = fopen('php://stdin', 'r');
             $confirm_directory_deletion = strtolower(trim(fgets($user_input)));
             if (!in_array($confirm_directory_deletion, array('y', 'yes')))
             {
-                $this->output('Aborted. Please delete the "' . self::EXPORT_DIR . '" directory before processing again.');
+                $this->output('Aborted. Please delete the "' . $this->exportDir . '" directory before processing again.');
                 return false;
             }
             $this->executeCommand('rm -rf ' . $this->exportPath);
             if (is_readable($this->exportPath))
             {
-                $this->output('Aborted. The "' . self::EXPORT_DIR . '" directory could not be deleted.');
+                $this->output('Aborted. The "' . $this->exportDir . '" directory could not be deleted.');
                 return false;
             }
             else
