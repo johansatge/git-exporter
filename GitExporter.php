@@ -10,7 +10,7 @@ class GitExporter
 {
 
     const NAME    = 'GitExporter';
-    const VERSION = '0.1';
+    const VERSION = '0.1.1';
 
     private $userInput;
     private $exportDir;
@@ -130,20 +130,7 @@ class GitExporter
         $line_length = 0;
         foreach ($modified_files as $index => $file)
         {
-            $fileinfo = pathinfo($file);
-            if (!is_dir($this->exportPath . DIRECTORY_SEPARATOR . $fileinfo['dirname']))
-            {
-                $subdirs = explode('/', $fileinfo['dirname']);
-                $dir     = $this->exportPath . DIRECTORY_SEPARATOR;
-                if (count($subdirs) > 0)
-                {
-                    foreach ($subdirs as $subdir)
-                    {
-                        $dir .= $subdir . DIRECTORY_SEPARATOR;
-                        $this->executeCommand('mkdir ' . $dir);
-                    }
-                }
-            }
+            $this->makeDirTreeForFile($file);
             $this->executeCommand('git show ' . $until . ':' . $file . ' > ' . $this->exportPath . DIRECTORY_SEPARATOR . $file);
             $line = 'Exporting file ' . ($index + 1) . ' of ' . $modified_files_count . ' (' . intval(($index + 1) * (100 / $modified_files_count)) . '%): ' . $file;
             $this->output($line . ($line_length - strlen($line) > 0 ? str_repeat(' ', $line_length - strlen($line)) : ''), false);
@@ -169,6 +156,31 @@ class GitExporter
 
         $this->output('Export done. ' . count($commits['result']) . ' commits found, ' . $modified_files_count . ' modified file(s) and ' . $deleted_files_count . ' deleted file(s).');
         return true;
+    }
+
+    /**
+     * Checks if the directory tree exists for the given file, or creates it
+     * @param $file
+     */
+    private function makeDirTreeForFile($file)
+    {
+        $fileinfo = pathinfo($file);
+        if (!is_dir($this->exportPath . DIRECTORY_SEPARATOR . $fileinfo['dirname']))
+        {
+            $subdirs = explode('/', $fileinfo['dirname']);
+            $dir     = $this->exportPath . DIRECTORY_SEPARATOR;
+            if (count($subdirs) > 0)
+            {
+                foreach ($subdirs as $subdir)
+                {
+                    $dir .= $subdir . DIRECTORY_SEPARATOR;
+                    if (!is_dir($dir))
+                    {
+                        $this->executeCommand('mkdir ' . $dir);
+                    }
+                }
+            }
+        }
     }
 
     /**

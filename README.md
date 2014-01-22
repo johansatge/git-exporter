@@ -29,6 +29,10 @@ You may specify your own export directory by using the `--dir` option:
 
 ## Changelog
 
+### 0.1.1
+
+Refactors calls to count(), adds the makeDirTreeForFile function
+
 ### 0.1
 
 Initial version
