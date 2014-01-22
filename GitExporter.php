@@ -66,7 +66,6 @@ class GitExporter
 
     /**
      * Builds the export folder
-     * @todo do not count() $modified_files and $commits['result'] multiple times
      * @return boolean
      */
     private function makeDiff()
@@ -86,7 +85,6 @@ class GitExporter
         }
 
         // Gets the commits list
-        // @todo test this when using a tag name or the "HEAD" reference
         $commits = $this->executeCommand('git log ' . $since . '..' . $until . ' -m --pretty=format:%H');
         if ($commits['error'] !== false)
         {
@@ -117,6 +115,8 @@ class GitExporter
                 }
             }
         }
+        $modified_files_count = count($modified_files);
+        $deleted_files_count  = count($deleted_files);
         $this->output();
 
         // If the export directory exists, asks for deletion
@@ -145,7 +145,7 @@ class GitExporter
                 }
             }
             $this->executeCommand('git show ' . $until . ':' . $file . ' > ' . $this->exportPath . DIRECTORY_SEPARATOR . $file);
-            $line = 'Exporting file ' . ($index + 1) . ' of ' . count($modified_files) . ' (' . intval(($index + 1) * (100 / count($modified_files))) . '%): ' . $file;
+            $line = 'Exporting file ' . ($index + 1) . ' of ' . $modified_files_count . ' (' . intval(($index + 1) * (100 / $modified_files_count)) . '%): ' . $file;
             $this->output($line . ($line_length - strlen($line) > 0 ? str_repeat(' ', $line_length - strlen($line)) : ''), false);
             $line_length = strlen($line);
         }
@@ -156,8 +156,8 @@ class GitExporter
             'Diff from "' . $since . '" to "' . $until . '"',
             $this->separator,
             count($commits['result']) . ' commits',
-            count($modified_files) . ' modified file(s)',
-            count($deleted_files) . ' deleted file(s)',
+            $modified_files_count . ' modified file(s)',
+            $deleted_files_count . ' deleted file(s)',
             $this->separator,
             'Modified files:',
             implode("\r\n", $modified_files),
@@ -167,7 +167,7 @@ class GitExporter
         );
         file_put_contents($this->exportPath . DIRECTORY_SEPARATOR . '_changelog.txt', implode("\r\n", $changelog));
 
-        $this->output('Export done. ' . count($commits['result']) . ' commits found, ' . count($modified_files) . ' modified file(s) and ' . count($deleted_files) . ' deleted file(s).');
+        $this->output('Export done. ' . count($commits['result']) . ' commits found, ' . $modified_files_count . ' modified file(s) and ' . $deleted_files_count . ' deleted file(s).');
         return true;
     }
 
