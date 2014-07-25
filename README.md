@@ -5,13 +5,13 @@ Git Exporter
 
 GitExporter is a PHP CLI tool designed to export data from a Git repository.
 
-![Screen capture](https://raw.github.com/johansatge/git-exporter/master/screenshot.png)
+![Screen capture](https://raw.github.com/johansatge/git-exporter/master/assets/css/images/screenshot.png)
 
 ## Installation
 
 Create an alias to the tool in your `.bashrc` file.
 
-    alias gitexporter="php '/Users/jsatge/www/git-exporter/GitExporter.php'"
+    alias gitexporter="php '/Users/jsatge/www/git-exporter/classes/GitExporter.php'"
 
 ## Usage
 
