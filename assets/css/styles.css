@@ -1,0 +1,104 @@
+/**
+ * Global page styles
+ */
+html, body, div, button, p, img, h1, h2, h3, h4, pre {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 18px;
+    color: #202020;
+    padding: 0 0 50px 0;
+}
+
+a, a:visited {
+    color: #0769AD;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.main {
+    position: relative;
+    width: 718px;
+    margin: 80px auto 0 auto;
+}
+
+.main h1 {
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 42px;
+    text-align: center;
+    margin: 0 0 40px 0;
+}
+
+.main h1 em {
+    font-weight: 300;
+    font-style: normal;
+}
+
+.main h1 img {
+    vertical-align: middle;
+    margin: -6px 4px 0 0;
+}
+
+.main h2 {
+    font-weight: 500;
+    padding: 20px 0 0 0;
+    margin: 0 0 20px 0;
+    line-height: 29px;
+    font-size: 29px;
+}
+
+.main h3 {
+    font-weight: 500;
+    margin: 0 0 10px 0;
+    line-height: 22px;
+    font-size: 22px;
+}
+
+.main p {
+    font-weight: 300;
+    line-height: 28px;
+    margin: 0 0 20px 0;
+}
+
+.main pre {
+    background: #f1f1f1;
+    color: #333333;
+    padding: 10px 15px 10px 15px;
+    margin: 0 0 20px 0;
+    border-radius: 3px;
+    border: 1px solid #DDDDDD;
+    font-size: 13px;
+    font-weight: 400;
+    font-family: 'Droid Sans Mono', Courier;
+}
+
+.main code {
+    background: #f1f1f1;
+    padding: 2px 8px 4px 8px;
+    border-radius: 3px;
+    font-family: 'Roboto', sans-serif;
+    color: #f34f29;
+}
+
+.main .center {
+    text-align: center;
+}
+
+.fork-me {
+    position: absolute;
+    z-index: 3;
+    display: block;
+    width: 141px;
+    height: 141px;
+    top: 0;
+    right: 0;
+    background: url(images/fork-me.png) no-repeat 0 0;
+}

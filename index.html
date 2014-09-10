@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>GitExporter</title>
+        <link href="//fonts.googleapis.com/css?family=Roboto:300,500" rel="stylesheet" type="text/css">
+        <link href="//fonts.googleapis.com/css?family=Droid+Sans+Mono:400" rel="stylesheet" type="text/css">
+        <link href="assets/css/styles.css" rel="stylesheet" type="text/css">
+    </head>
+	<body>
+        <a class="fork-me" href="https://github.com/johansatge/git-exporter"></a>
+        <div class="main">
+            <h1>
+                <a href="http://git-scm.com/" target="_blank">
+                    <img src="assets/css/images/git.png">
+                </a>
+                Git<em>Exporter</em>
+            </h1>
+            <p class="center">
+                GitExporter is a PHP CLI tool designed to export commits from a Git repository.
+            </p>
+            <img src="assets/css/images/screenshot.png">
+            <h2>
+                Installation
+            </h2>
+            <p>
+                Checkout the project, and create an alias to the tool in your <code>.bashrc</code>, or <code>.profile</code> file.
+            </p>
+            <pre>alias gitexporter="php '/Users/jsatge/www/git-exporter/classes/GitExporter.php'"</pre>
+            <h2>
+                Usage
+            </h2>
+            <p>
+                Navigate to a Git repository:
+            </p>
+            <pre>cd /Users/jsatge/www/sample-git-repository</pre>
+            <p>
+                Execute the script to export the diff between two commits:
+            </p>
+            <pre>gitexporter diff 07840746ad77cbbfc580413eea46de19387f7ef0 HEAD</pre>
+            <p>
+                Exported files are stored in a <code>.export</code> directory in the Git repository.
+            </p>
+            <p>
+                A <code>_changelog.txt</code> file will also be created in the <code>.export</code> directory,
+                with a list of the modified and deleted files between the two commits.
+            </p>
+            <h2>
+                Options
+            </h2>
+            <p>
+                You may specify your own export directory by using the <code>--dir</code> option:
+            </p>
+            <pre>gitexporter diff 07840746ad77cbbfc580413eea46de19387f7ef0 HEAD --dir=my-export-dir</pre>
+            <h2>
+                Changelog
+            </h2>
+            <h3>0.1.1</h3>
+            <p>
+                Refactors calls to <code>count()</code>, adds the <code>makeDirTreeForFile()</code> function
+            </p>
+            <h3>0.1</h3>
+            <p>
+                Initial version
+            </p>
+        </div>
+	</body>
+</html>
