@@ -1,8 +1,5 @@
-Git Exporter
-============
-
-## Presentation
+# Git Exporter
 
 GitExporter is a PHP CLI tool designed to export commits from a Git repository.
 
-**[See project page](http://johansatge.github.io/git-exporter/)** for documentation.
+**[Project page](http://johansatge.github.io/git-exporter/)**
