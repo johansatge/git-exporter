@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * GitExporter
+ * https://github.com/johansatge/git-exporter
+ */
+
 if (php_sapi_name() == 'cli')
 {
     $exporter = new GitExporter($argv);
