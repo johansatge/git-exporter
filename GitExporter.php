@@ -1,8 +1,8 @@
+#!/usr/bin/env php
 <?php
 
 /*
- * GitExporter
- * https://github.com/johansatge/git-exporter
+ * GitExporter - https://github.com/johansatge/git-exporter
  */
 
 if (php_sapi_name() == 'cli')
@@ -15,7 +15,7 @@ class GitExporter
 {
 
     const NAME    = 'GitExporter';
-    const VERSION = '0.1.1';
+    const VERSION = '0.2.0';
 
     private $userInput;
     private $exportDir;
@@ -43,17 +43,23 @@ class GitExporter
         {
             $this->outputHelp();
         }
-        else if (in_array('version', array_keys($this->userInput['options'])))
-        {
-            $this->output(self::NAME . ' version ' . self::VERSION);
-        }
-        else if ($this->userInput['command'] == 'diff')
-        {
-            $this->makeDiff();
-        }
         else
         {
-            $this->output('Nothing to do. See "--help".');
+            if (in_array('version', array_keys($this->userInput['options'])))
+            {
+                $this->output(self::NAME . ' version ' . self::VERSION);
+            }
+            else
+            {
+                if ($this->userInput['command'] == 'diff')
+                {
+                    $this->makeDiff();
+                }
+                else
+                {
+                    $this->output('Nothing to do. See "--help".');
+                }
+            }
         }
     }
 
@@ -236,13 +242,16 @@ class GitExporter
                 $option                         = array_shift($value);
                 $user_input['options'][$option] = implode('=', $value);
             }
-            else if (empty($user_input['command']))
-            {
-                $user_input['command'] = $value;
-            }
             else
             {
-                $user_input['params'][] = $value;
+                if (empty($user_input['command']))
+                {
+                    $user_input['command'] = $value;
+                }
+                else
+                {
+                    $user_input['params'][] = $value;
+                }
             }
         }
         return $user_input;
@@ -275,7 +284,7 @@ class GitExporter
 
     /**
      * Outputs a message
-     * @param string $message
+     * @param string  $message
      * @param boolean $new_line
      */
     private function output($message = '', $new_line = true)
