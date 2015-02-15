@@ -12,10 +12,6 @@ Version | Notes
 `0.1.1` | Refactors calls to count(), adds the makeDirTreeForFile() function
 `0.1` | Initial version
 
-## Todos and known issues
-
-/
-
 ## License
 
 This project is releases under the [MIT License](LICENSE).
